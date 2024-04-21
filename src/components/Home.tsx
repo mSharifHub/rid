@@ -10,34 +10,34 @@ export const Home: React.FunctionComponent = () => {
     navigate("/auth");
   };
   return (
-    <div className="flex flex-col  h-full justify-around  ">
+    <div className="flex flex-col h-full  justify-around items-center   ">
       <div>
-        <h2 className="capitalize font-black text-lg mb-4 text-center">
+        <h2 className="capitalize font-extralight text-lg mb-4 justify-center items-center ">
           API and tools from
         </h2>
-        <div className="flex flex-row justify-around items-center gap-x-2  ">
+        <div className="flex  flex-wrap  justify-around items-center gap-x-4   ">
           <FontAwesomeIcon
             icon={faAws}
-            className=" transition-all duration-300 ease-out text-9xl text-orange-400  shadow-md w-40 h-40 p-2 hover:scale-110 cursor-pointer"
+            className=" transition-all duration-200 ease-out text-7xl sm:text-9xl text-orange-400   p-2 hover:scale-110 cursor-pointer"
           />
           <FontAwesomeIcon
             icon={faReact}
-            className=" transition-all duration-300 ease-out text-9xl text-blue-400 shadow-md w-40 h-40 p-2 hover:scale-110 cursor-pointer"
+            className=" transition-all duration-200 ease-out  text-7xl sm:text-9xl text-blue-400   p-2 hover:scale-110 cursor-pointer"
           />
           <FontAwesomeIcon
             icon={faGoogle}
-            className="transition-all duration-300 ease-out text-9xl text-red-400 shadow-md w-40 h-40 p-2 hover:scale-110 cursor-pointer"
+            className="transition-all duration-200 ease-out   text-7xl sm:text-9xl text-red-400   p-2 hover:scale-110 cursor-pointer"
           />
         </div>
       </div>
 
       <div className="flex justify-center items-center mt-4">
         <button
-          className="border-2 border-white font-black w-60 h-14 rounded-full "
+          className="border-2 rounded-full w-40 h-10  transition-all duration-200 ease-in-out  cursor-pointer hover:scale-105"
           typeof="button"
           onClick={handleLogin}
         >
-          <span className="capitalize text-lg"> app </span>
+          <span className="capitalize text-md"> app </span>
         </button>
       </div>
     </div>

@@ -12,7 +12,10 @@ import { PageNotFound } from "./components/PageNotFound";
 import { MinLayout } from "./components/MinLayout";
 import { MainLayout } from "./components/MainLayout";
 import { useUser } from "./user_state_management/UserContext";
-import { Auth } from "./components/Auth.tsx";
+import AuthUser from "./components/AuthUser";
+import { Amplify } from "aws-amplify";
+import config from "./amplifyconfiguration.json";
+Amplify.configure(config);
 
 function App() {
   const { state } = useUser() ?? {};
@@ -31,7 +34,7 @@ function App() {
           path="/auth"
           element={
             <MinLayout>
-              <Auth />
+              <AuthUser />
             </MinLayout>
           }
         />

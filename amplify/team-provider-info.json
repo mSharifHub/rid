@@ -10,6 +10,11 @@
       "StackName": "amplify-rideshare-dev-f1ce7",
       "StackId": "arn:aws:cloudformation:us-east-2:339713053167:stack/amplify-rideshare-dev-f1ce7/f7de5a10-fe2a-11ee-a8bb-0af009530391",
       "AmplifyAppId": "d3f8r2o0paxn27"
+    },
+    "categories": {
+      "auth": {
+        "ridesharea9fd2177": {}
+      }
     }
   }
 }
