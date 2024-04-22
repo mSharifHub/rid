@@ -3,9 +3,6 @@ import React, { createContext, useContext } from "react";
 export interface UserState {
   userName: string;
   userEmail: string;
-  isLoggedIn: boolean;
-  rides: any[];
-  balance: number;
 }
 
 interface ContextType {

@@ -1,9 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Home } from "./components/Home";
 import { Profile } from "./components/Profile";
 import { Dashboard } from "./components/Dashboard";
@@ -11,14 +6,11 @@ import "./App.css";
 import { PageNotFound } from "./components/PageNotFound";
 import { MinLayout } from "./components/MinLayout";
 import { MainLayout } from "./components/MainLayout";
-import { useUser } from "./user_state_management/UserContext";
-import AuthUser from "./components/AuthUser";
-import { Amplify } from "aws-amplify";
-import config from "./amplifyconfiguration.json";
-Amplify.configure(config);
+import AuthUserComponent from "./components/AuthUserComponent";
+
+import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
-  const { state } = useUser() ?? {};
   return (
     <Router>
       <Routes>
@@ -34,24 +26,28 @@ function App() {
           path="/auth"
           element={
             <MinLayout>
-              <AuthUser />
+              <AuthUserComponent />
             </MinLayout>
           }
         />
         <Route
           path="/profile"
           element={
-            <MinLayout>
-              {state?.isLoggedIn ? <Profile /> : <Navigate to="/" replace />}
-            </MinLayout>
+            <ProtectedRoute>
+              <MinLayout>
+                <Profile />
+              </MinLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/dashboard"
           element={
-            <MinLayout>
-              {state?.isLoggedIn ? <Dashboard /> : <Navigate to="/" replace />}
-            </MinLayout>
+            <ProtectedRoute>
+              <MinLayout>
+                <Dashboard />
+              </MinLayout>
+            </ProtectedRoute>
           }
         />
         {/* Redirect all unmatched routes to the Home page */}

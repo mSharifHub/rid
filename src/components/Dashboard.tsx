@@ -1,10 +1,13 @@
 import React from "react";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 
 export const Dashboard: React.FC = () => {
+  const { user, signOut } = useAuthenticator((context) => [context.user]);
+
   return (
-    <div>
-      <h1>Dashboard Page</h1>
-      <p>This is your profile page, accessible only after authentication.</p>
-    </div>
+    <>
+      <h2>Welcome, {user.username}!</h2>
+      <button onClick={signOut}>Sign Out</button>
+    </>
   );
 };

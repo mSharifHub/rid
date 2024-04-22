@@ -17,7 +17,6 @@ export const UserReducer = (state: UserState, action: Action): UserState => {
         ...state,
         userName: action.payload.userName,
         userEmail: action.payload.userEmail,
-        isLoggedIn: true,
       };
 
     case "LOG_OUT":
@@ -25,9 +24,6 @@ export const UserReducer = (state: UserState, action: Action): UserState => {
         ...state,
         userName: "",
         userEmail: "",
-        rides: [],
-        balance: 0,
-        isLoggedIn: false,
       };
     default:
       return state;

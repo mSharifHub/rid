@@ -1,18 +1,20 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
-import { Amplify } from "aws-amplify";
-import awsExports from "./aws-exports";
 import { UserProvider } from "./user_state_management/UserProvider";
 import "./index.css";
 import "@aws-amplify/ui-react/styles.css";
-
-Amplify.configure(awsExports);
+import { Amplify } from "aws-amplify";
+import config from "./amplifyconfiguration.json";
+Amplify.configure(config);
+import { Authenticator } from "@aws-amplify/ui-react";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <UserProvider>
-      <App />
-    </UserProvider>
+    <Authenticator.Provider>
+      <UserProvider>
+        <App />
+      </UserProvider>
+    </Authenticator.Provider>
   </React.StrictMode>,
 );
