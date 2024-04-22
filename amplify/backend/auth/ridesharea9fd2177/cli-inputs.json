@@ -1,8 +1,6 @@
 {
   "version": "1",
   "cognitoConfig": {
-    "identityPoolName": "ridesharea9fd2177_identitypool_a9fd2177",
-    "allowUnauthenticatedIdentities": false,
     "resourceNameTruncated": "ridesha9fd2177",
     "userPoolName": "ridesharea9fd2177_userpool_a9fd2177",
     "autoVerifiedAttributes": [
@@ -35,17 +33,12 @@
     "userpoolClientSetAttributes": false,
     "sharedId": "a9fd2177",
     "resourceName": "ridesharea9fd2177",
-    "authSelections": "identityPoolAndUserPool",
+    "authSelections": "userPoolOnly",
     "useDefault": "defaultSocial",
     "hostedUI": true,
     "usernameAttributes": [
       "email"
     ],
-    "hostedUIDomainName": "ridesharea9fd2177-a9fd2177",
-    "authProvidersUserPool": [
-      "Google"
-    ],
-    "hostedUIProviderMeta": "[{\"ProviderName\":\"Google\",\"authorize_scopes\":\"openid email profile\",\"AttributeMapping\":{\"email\":\"email\",\"username\":\"sub\"}}]",
     "userPoolGroupList": [],
     "serviceName": "Cognito",
     "usernameCaseSensitive": false,
@@ -64,6 +57,19 @@
     },
     "breakCircularDependency": true,
     "dependsOn": [],
-    "oAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"phone\",\"email\",\"openid\",\"profile\",\"aws.cognito.signin.user.admin\"],\"CallbackURLs\":[\"http://localhost:5173/dashboard/\"],\"LogoutURLs\":[\"http://localhost:5173/\",\"http://localhost:5173/\"]}"
+    "userPoolGroups": false,
+    "adminQueries": false,
+    "triggers": {},
+    "parentStack": {
+      "Ref": "AWS::StackId"
+    },
+    "permissions": [],
+    "hostedUIDomainName": "rideshare167dc8a9-167dc8a9",
+    "authProvidersUserPool": [
+      "Google"
+    ],
+    "hostedUIProviderMeta": "[{\"ProviderName\":\"Google\",\"authorize_scopes\":\"openid email profile\",\"AttributeMapping\":{\"email\":\"email\",\"username\":\"sub\"}}]",
+    "oAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"phone\",\"email\",\"openid\",\"profile\",\"aws.cognito.signin.user.admin\"],\"CallbackURLs\":[\"http://localhost:5173/dashboard/\"],\"LogoutURLs\":[\"http://localhost:5173/\"]}",
+    "authProviders": []
   }
 }
