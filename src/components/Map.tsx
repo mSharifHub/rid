@@ -1,46 +1,59 @@
 import { useEffect, useRef, useState } from "react";
 
+interface Position {
+  lat: number;
+  lng: number;
+}
+
 export default function Map() {
   const [map, setMap] = useState<google.maps.Map>();
   const [circle, setCircle] = useState<google.maps.Circle>();
+  const [carMarker, setCarMarker] =
+    useState<google.maps.marker.AdvancedMarkerElement>();
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (ref.current && !map) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const pos = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            const initialConfig = {
-              center: pos,
-              zoom: 10,
-            };
-            const newMap = new window.google.maps.Map(
-              ref.current as HTMLDivElement,
-              initialConfig,
-            );
-            setMap(newMap);
-            const radiusCircle = new google.maps.Circle({
-              strokeColor: "blue",
-              strokeOpacity: 0.8,
-              strokeWeight: 1,
-              fillColor: "blue",
-              fillOpacity: 0.1,
-              map: newMap,
-              center: pos,
-              radius: 100, // meters
-            });
+  const setNearPosition = (baseLocation: Position): Position => {
+    return {
+      lat: baseLocation.lat + (Math.random() - 3) * 2,
+      lng: baseLocation.lng + (Math.random() - 3) * 2,
+    };
+  };
 
-            setCircle(radiusCircle);
-          },
-          (error) => {
-            console.error("Geolocation error:", error);
-          },
-        );
-      }
+  useEffect(() => {
+    if (!map) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const userPosition = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        const initMap = new google.maps.Map(ref.current as HTMLElement, {
+          center: userPosition,
+          zoom: 15,
+        });
+        setMap(initMap);
+
+        const radiusCircle = new google.maps.Circle({
+          strokeColor: "blue",
+          strokeOpacity: 0.8,
+          strokeWeight: 1,
+          fillColor: "blue",
+          fillOpacity: 0.1,
+          map: initMap,
+          center: userPosition,
+          radius: 100, // meters
+        });
+
+        setCircle(radiusCircle);
+
+        const carPosition = setNearPosition(userPosition);
+
+        const initCarMarker = new google.maps.marker.AdvancedMarkerElement({
+          position: carPosition,
+          map: initMap,
+          title: "car marker",
+        });
+        setCarMarker(initCarMarker);
+      });
     }
   }, [map]);
 
