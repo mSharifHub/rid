@@ -1,12 +1,12 @@
-import { ReactNode } from "react";
+// import { ReactNode } from "react";
 import { withAuthenticator } from "@aws-amplify/ui-react";
 
-interface AuthUserComponentProps {
-  children: ReactNode;
-}
+// interface AuthUserComponentProps {
+//   children: ReactNode;
+// }
 
-function AuthUserComponent({ children }: AuthUserComponentProps) {
-  return <div>{children}</div>;
+function AuthUserComponent() {
+  return <div></div>;
 }
 
 const AuthUserComponentWithAuthenticator = withAuthenticator(
