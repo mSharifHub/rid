@@ -1,27 +1,9 @@
-import React, { ReactElement, Suspense } from "react";
-import { Wrapper } from "@googlemaps/react-wrapper";
+import React from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
-const LazyMap = React.lazy(() => import("./Map")); // Dynamically import the Map component
+import MapComponent from "./MapComponent";
 
 export const Dashboard: React.FC = () => {
   const { signOut } = useAuthenticator((context) => [context.user]);
-
-  const render = (status: "LOADING" | "FAILURE" | "SUCCESS"): ReactElement => {
-    switch (status) {
-      case "LOADING":
-        return <h1>Loading map...</h1>;
-      case "FAILURE":
-        return <h1>Failed to load map</h1>;
-      case "SUCCESS":
-        return (
-          <Suspense fallback={<div>Loading Map...</div>}>
-            <LazyMap />
-          </Suspense>
-        );
-      default:
-        return <div> {status}</div>;
-    }
-  };
 
   return (
     <>
@@ -38,10 +20,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className=" flex justify-center items-center ">
-          <Wrapper
-            apiKey={import.meta.env.VITE_GOOGLE_API_KEY}
-            render={render}
-          />
+          <MapComponent />
         </div>
       </div>
     </>
