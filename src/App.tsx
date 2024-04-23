@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import { Home } from "./components/Home";
 import { Profile } from "./components/Profile";
 import { Dashboard } from "./components/Dashboard";
@@ -9,10 +10,12 @@ import { MainLayout } from "./components/MainLayout";
 import AuthUserComponent from "./components/AuthUserComponent";
 
 import ProtectedRoute from "./ProtectedRoute";
+import NavigationHandler from "./components/NavigationHandler.tsx";
 
 function App() {
   return (
     <Router>
+      <NavigationHandler />
       <Routes>
         <Route
           path="/"

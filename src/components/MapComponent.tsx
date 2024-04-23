@@ -24,6 +24,15 @@ export default function MapComponent() {
     version: "weekly",
   });
 
+  // Alert if permission is requested
+  useEffect(() => {
+    navigator.permissions.query({ name: "geolocation" }).then((result) => {
+      if (result.state === "denied") {
+        alert("You need to grant your browser permission");
+      }
+    });
+  }, []);
+
   // Creates and Loads map
   useEffect(() => {
     const initializeMap = async (position: GeolocationPosition) => {

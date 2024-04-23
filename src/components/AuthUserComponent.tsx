@@ -16,4 +16,5 @@ const AuthUserComponentWithAuthenticator = withAuthenticator(
   },
 );
 
+
 export default AuthUserComponentWithAuthenticator;
