@@ -19,18 +19,13 @@ export default function MapComponent() {
   const [userPosition, setUserPosition] = useState<Coordinates | null>(null);
   const [zoom, setZoom] = useState<number>(10);
   const [radius, setRadius] = useState(300);
+  const [onPing, setOnPing] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
   });
-
-  const handleCenterMap = () => {
-    if (mapRef.current && userPosition) {
-      mapRef.current.setCenter(userPosition);
-    }
-  };
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -48,25 +43,24 @@ export default function MapComponent() {
         if (mapRef.current) {
           setUserPosition(pos);
           mapRef.current!.setCenter(pos);
+
+          const timer = setInterval(() => {
+            setZoom((prev) => {
+              if (prev >= 15) {
+                clearInterval(timer);
+                return prev;
+              } else {
+                return prev + 1;
+              }
+            });
+          }, 200);
+
+          return () => clearInterval(timer);
         }
       },
       (error) => console.error("error getting location", error),
       { enableHighAccuracy: true },
     );
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setZoom((prev) => {
-        if (prev >= 15) {
-          clearInterval(timer);
-          return prev;
-        } else {
-          return prev + 1;
-        }
-      });
-    }, 200);
-    return () => clearInterval(timer);
   }, [zoom]);
 
   if (!isLoaded) {
@@ -102,7 +96,8 @@ export default function MapComponent() {
           <button className=" h-full w-10 absolute right-0 top-1/2 -translate-y-1/2 bg-indigo-500 rounded-r-lg  ">
             <div className="flex justify-center items-center">
               <div
-                onClick={handleCenterMap}
+                onMouseEnter={() => setOnPing(true)}
+                onClick={() => mapRef.current?.setCenter(userPosition!)}
                 className=" transition-all duration-200 ease-in-out bg-white h-5 w-5 rounded-full hover:animate-ping hover:scale-110 cursor-pointer"
               />
             </div>
