@@ -1,100 +1,132 @@
-import { useEffect, useRef, useState } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
+import { useJsApiLoader, GoogleMap, Circle } from "@react-google-maps/api";
+import { useCallback, useEffect, useState, useRef } from "react";
 
-interface ClientPosition {
+// coordinates types
+type Coordinates = {
   lat: number;
   lng: number;
-}
+};
 
-declare global {
-  interface Window {
-    google: () => void;
-  }
-}
+const defaultCircleOptions = {
+  strokeOpacity: 0.1,
+  strokeWeight: 2,
+  fillColor: "blue",
+  fillOpacity: 0.12,
+};
 
 export default function MapComponent() {
-  const [mapObj, setMapObj] = useState<google.maps.Map>();
-  const [circle, setCircle] = useState<google.maps.Circle>();
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const [userPosition, setUserPosition] = useState<Coordinates | null>(null);
+  const [zoom, setZoom] = useState<number>(10);
+  const [radius, setRadius] = useState(300);
 
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
-  const loader = new Loader({
-    apiKey: apiKey,
-    version: "weekly",
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: apiKey,
   });
 
-  // Alert if permission is requested
+  const handleCenterMap = () => {
+    if (mapRef.current && userPosition) {
+      mapRef.current.setCenter(userPosition);
+    }
+  };
+
   useEffect(() => {
-    navigator.permissions.query({ name: "geolocation" }).then((result) => {
-      if (result.state === "denied") {
-        alert("You need to grant your browser permission");
-      }
-    });
-  }, []);
-
-  // Creates and Loads map
-  useEffect(() => {
-    const initializeMap = async (position: GeolocationPosition) => {
-      const { Map } = (await google.maps.importLibrary(
-        "maps",
-      )) as google.maps.MapsLibrary;
-
-      const userPosition = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
-
-      const mapInstance = new Map(mapRef.current!, {
-        center: userPosition,
-        zoom: 10,
-      });
-
-      const radiusCircle = new google.maps.Circle({
-        strokeColor: "blue",
-        strokeOpacity: 0.8,
-        strokeWeight: 1,
-        fillColor: "blue",
-        fillOpacity: 0.1,
-        map: mapInstance,
-        center: userPosition,
-        radius: 300, // meters
-      });
-      setMapObj(mapInstance);
-      setCircle(radiusCircle);
-    };
-
-    if (!apiKey) {
-      console.log("api key not loaded");
+    if (!navigator.geolocation) {
+      console.error("Geolocation is not supported");
       return;
     }
 
-    loader.load().then(() => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => initializeMap(position),
-        () => alert("Error: Could not fetch your current location."),
-        { enableHighAccuracy: true },
-      );
-    });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const pos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserPosition(pos);
+        if (mapRef.current) {
+          setUserPosition(pos);
+          mapRef.current!.setCenter(pos);
+        }
+      },
+      (error) => console.error("error getting location", error),
+      { enableHighAccuracy: true },
+    );
   }, []);
 
   useEffect(() => {
-    let timerOut: ReturnType<typeof setTimeout>;
-
-    if (mapObj) {
-      const maxZoom = 15;
-      let zoomLevel = mapObj.getZoom();
-      const zoomOnLoad = () => {
-        if (zoomLevel !== undefined && zoomLevel < maxZoom) {
-          mapObj.setZoom(++zoomLevel);
-          timerOut = setTimeout(zoomOnLoad, 200);
+    const timer = setInterval(() => {
+      setZoom((prev) => {
+        if (prev >= 15) {
+          clearInterval(timer);
+          return prev;
+        } else {
+          return prev + 1;
         }
-      };
+      });
+    }, 200);
+    return () => clearInterval(timer);
+  }, [zoom]);
 
-      zoomOnLoad();
-    }
-    return () => clearTimeout(timerOut);
-  }, [mapObj]);
+  if (!isLoaded) {
+    return (
+      <div className="min-h-full min-w-full flex justify-center items-center">
+        <div className="w-1/2 h-1/2 bg-slate-300 animate-pulse"></div>
+      </div>
+    );
+  }
 
-  return <div ref={mapRef} style={{ height: "100vh", width: "100%" }} />;
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg font-medium text-red-600">
+          Error loading Google Maps
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen w-screen relative flex flex-col">
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20">
+        <form className="shadow-xl">
+          <label htmlFor="destination-form" />
+          <input
+            name="destination-form"
+            id="destination-form"
+            type="text"
+            placeholder="enter destination"
+            className=" w-80  h-10 focus:ring-0 focus:ring-offset-0  focus:outline-none placeholder:capitalize placeholder:text-slate-400  placeholder:px-2  placeholder:text-start  rounded-lg"
+          />
+          <button className=" h-full w-10 absolute right-0 top-1/2 -translate-y-1/2 bg-indigo-500 rounded-r-lg  ">
+            <div className="flex justify-center items-center">
+              <div
+                onClick={handleCenterMap}
+                className=" transition-all duration-200 ease-in-out bg-white h-5 w-5 rounded-full hover:animate-ping hover:scale-110 cursor-pointer"
+              />
+            </div>
+          </button>
+
+          {/* google auto complete*/}
+        </form>
+      </div>
+      <GoogleMap
+        onLoad={(map): void => {
+          mapRef.current = map; // Set the map reference
+        }}
+        mapContainerStyle={{ width: "100%", height: "100%" }}
+        center={userPosition || mapRef.current?.getCenter() || undefined}
+        zoom={zoom}
+      >
+        {mapRef.current && userPosition && (
+          <Circle
+            center={userPosition}
+            radius={radius}
+            options={defaultCircleOptions}
+          />
+        )}
+      </GoogleMap>
+    </div>
+  );
 }
