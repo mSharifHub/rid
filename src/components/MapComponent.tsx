@@ -192,6 +192,7 @@ export default function MapComponent() {
               id="origin-form"
               type="text"
               placeholder="ride from"
+              value={originRef.current?.value}
               className=" w-full  h-10 focus:ring-0 focus:ring-offset-0  focus:outline-none placeholder:capitalize placeholder:text-slate-400  placeholder:px-2  placeholder:text-start  rounded-lg  border-2 border-slate-200"
             />
 
