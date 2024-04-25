@@ -10,7 +10,7 @@ export const Home: React.FunctionComponent = () => {
     navigate("/auth");
   };
   return (
-    <div className="flex flex-col h-full  justify-around items-center   ">
+    <div className="flex flex-col min-h-screen  justify-around items-center ">
       <div>
         <h2 className="capitalize font-extralight text-lg mb-4 justify-center items-center ">
           API and tools from
