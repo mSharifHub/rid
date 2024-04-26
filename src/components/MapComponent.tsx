@@ -7,7 +7,7 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { Simulate } from "react-dom/test-utils";
@@ -25,7 +25,7 @@ const defaultCircleOptions = {
   fillColor: "blue",
   fillOpacity: 0.12,
 };
-const libraries = ["places"] as Libraries;
+
 
 export default function MapComponent() {
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -44,9 +44,13 @@ export default function MapComponent() {
   const [duration, setDuration] = useState<string | undefined | null>(null);
 
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+
   const originRef = useRef<HTMLInputElement>(null);
 
   const destinationRef = useRef<HTMLInputElement>(null);
+
+  const [libraries] = useState<Libraries>(["places"])
+
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
@@ -54,9 +58,9 @@ export default function MapComponent() {
     libraries: libraries,
   });
 
-  // recenter user position and sets origin to from destination
-  const handleCenterUserPosition = async (
-    e: React.MouseEvent<HTMLDivElement>,
+  // re-center user position and sets origin to from destination
+  const handleCenterUserPosition: React.MouseEventHandler<HTMLButtonElement> = async (
+    e
   ) => {
     e.preventDefault();
 
@@ -85,7 +89,8 @@ export default function MapComponent() {
     }
   };
 
-  const calculateRoute = async () => {
+  const calculateRoute:React.FormEvent<HTMLFormElement> = async (e) => {
+    e.preventDefault();
     // return early if values are empty
     if (
       originRef.current?.value === "" ||
@@ -192,22 +197,22 @@ export default function MapComponent() {
               id="origin-form"
               type="text"
               placeholder="ride from"
-              value={originRef.current?.value}
-              className=" w-full  h-10 focus:ring-0 focus:ring-offset-0  focus:outline-none placeholder:capitalize placeholder:text-slate-400  placeholder:px-2  placeholder:text-start  rounded-lg  border-2 border-slate-200"
+              className=" w-full  h-10 focus:ring-0 focus:ring-offset-0  focus:outline-none placeholder:capitalize placeholder:text-slate-400  placeholder:px-2  placeholder:text-start text-start text-slate-500 flex justify-start items-center px-2  rounded-lg  border-2 border-slate-200"
             />
 
-            <button className=" h-full w-10 absolute right-0 top-1/2 -translate-y-1/2 bg-indigo-500 rounded-r-lg  ">
-              <div className="flex justify-center items-center">
-                <div
-                  onClick={(e) => handleCenterUserPosition(e)}
-                  className=" transition-all duration-200 ease-in-out bg-white h-3 w-3 rounded-full hover:animate-ping hover:scale-110 cursor-pointer"
-                />
+            <div className="h-full w-10 absolute right-0 top-1/2 -translate-y-1/2 bg-indigo-500 rounded-r-lg border-2">
+              <div className="flex h-full justify-center items-center">
+                <button
+                  type="button"
+                  onClick={handleCenterUserPosition}
+                  className=" flex  transition-all duration-200 ease-in-out bg-white h-3 w-3 rounded-full hover:animate-ping hover:scale-110 cursor-pointer"
+                ></button>
               </div>
-            </button>
+            </div>
           </form>
         </Autocomplete>
         <Autocomplete>
-          <form className="  flex justify-center items-center mt-10 mx-10 relative">
+          <form className="  flex flex-col justify-center items-center mt-10 mx-10 relative">
             <label htmlFor="destination-form" />
             <input
               ref={destinationRef}
@@ -217,9 +222,15 @@ export default function MapComponent() {
               placeholder="ride to"
               className=" w-full  h-10 focus:ring-0 focus:ring-offset-0  focus:outline-none placeholder:capitalize placeholder:text-slate-400  placeholder:px-2  placeholder:text-start  rounded-lg  border-2 border-slate-200"
             />
+            <button
+              // onClick={(e) => calculateRoute(e)}
+              className=" flex justify-center items-center mt-4 h-8 w-20 rounded-lg  text-white text-center bg-indigo-500 capitalize transition-transform duration-200 ease-out hover:scale-105 hover:cursor-pointer"
+              type="submit">
+               request
+            </button>
           </form>
         </Autocomplete>
-        <small className="flex text-center justify-center items-center mt-2 capitalize">
+        <small className="flex  p-2 text-center justify-center items-center  capitalize">
           powered by
           <FontAwesomeIcon
             icon={faGoogle}
@@ -228,6 +239,7 @@ export default function MapComponent() {
           ></FontAwesomeIcon>
           APIS
         </small>
+
       </div>
 
       <GoogleMap
