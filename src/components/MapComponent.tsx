@@ -5,9 +5,10 @@ import {
   Autocomplete,
   Libraries,
   DirectionsRenderer,
+  Marker,
 } from "@react-google-maps/api";
 
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { Simulate } from "react-dom/test-utils";
@@ -19,13 +20,23 @@ type Coordinates = {
   lng: number;
 };
 
+interface DriverState {
+  position: {
+    lat: number;
+    lng: number;
+  };
+  driverDirection: google.maps.DirectionsResult | null;
+  driverDistance: string | null;
+  driverDuration: string | null;
+  isVisible: boolean;
+}
+
 const defaultCircleOptions = {
   strokeOpacity: 0.1,
   strokeWeight: 2,
   fillColor: "blue",
   fillOpacity: 0.12,
 };
-
 
 export default function MapComponent() {
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -34,7 +45,7 @@ export default function MapComponent() {
 
   const [zoom, setZoom] = useState<number>(10);
 
-  const [radius, setRadius] = useState(300);
+  const [radius, setRadius] = useState(1000);
 
   const [direction, setDirection] =
     useState<google.maps.DirectionsResult | null>(null);
@@ -43,14 +54,21 @@ export default function MapComponent() {
 
   const [duration, setDuration] = useState<string | undefined | null>(null);
 
+  const [driver, setDriver] = useState<DriverState>({
+    position: { lat: 0, lng: 0 },
+    driverDirection: null,
+    driverDistance: null,
+    driverDuration: null,
+    isVisible: false,
+  });
+
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
   const originRef = useRef<HTMLInputElement>(null);
 
   const destinationRef = useRef<HTMLInputElement>(null);
 
-  const [libraries] = useState<Libraries>(["places"])
-
+  const [libraries] = useState<Libraries>(["places"]);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
@@ -59,9 +77,9 @@ export default function MapComponent() {
   });
 
   // re-center user position and sets origin to from destination
-  const handleCenterUserPosition: React.MouseEventHandler<HTMLButtonElement> = async (
-    e
-  ) => {
+  const handleCenterUserPosition: React.MouseEventHandler<
+    HTMLButtonElement
+  > = async (e) => {
     e.preventDefault();
 
     if (!mapRef.current || !userPosition) return;
@@ -89,38 +107,130 @@ export default function MapComponent() {
     }
   };
 
-  const calculateRoute:React.FormEvent<HTMLFormElement> = async (e) => {
-    e.preventDefault();
-    // return early if values are empty
-    if (
-      originRef.current?.value === "" ||
-      destinationRef.current?.value === ""
-    ) {
+  const calculateAndSetRoute = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    if (!originRef.current?.value || !destinationRef.current?.value) {
       return;
     }
+    const directionServices: google.maps.DirectionsService =
+      new google.maps.DirectionsService();
 
-    if (originRef.current && destinationRef.current) {
-      try {
-        const directionServices: google.maps.DirectionsService =
-          new google.maps.DirectionsService();
-        const result: google.maps.DirectionsResult =
-          await directionServices.route({
-            origin: originRef.current.value,
-            destination: destinationRef.current.value,
-            travelMode: google.maps.TravelMode.DRIVING,
+    try {
+      const routeRequest = {
+        origin: originRef.current.value,
+        destination: destinationRef.current.value,
+        travelMode: google.maps.TravelMode.DRIVING,
+      };
+
+      const routeResponse: google.maps.DirectionsResult | null =
+        await new Promise((resolve, reject) => {
+          directionServices.route(routeRequest, (response, status) => {
+            if (status === google.maps.DirectionsStatus.OK) {
+              resolve(response);
+            } else {
+              reject(new Error("Failed to retrieve destination direction"));
+            }
           });
-        if (result) {
-          setDirection(result);
-          setDistance(result.routes[0].legs[0].distance?.text);
-          setDuration(result.routes[0].legs[0].duration?.text);
+        });
+
+      setDirection(routeResponse);
+      setDistance(routeResponse?.routes[0].legs[0].distance?.text);
+      setDuration(routeResponse?.routes[0].legs[0].duration?.text);
+
+      if (userPosition) {
+        const nearByDriver = {
+          lat: userPosition.lat + 0.007,
+          lng: userPosition.lng + 0.0025,
+        };
+
+        const userLatLng = new google.maps.LatLng(userPosition);
+
+        const distanceToDriver =
+          google.maps.geometry.spherical.computeDistanceBetween(
+            userLatLng,
+            new google.maps.LatLng(nearByDriver),
+          );
+
+        setDriver((prevState) => ({
+          ...prevState,
+          position: nearByDriver,
+          isVisible: distanceToDriver <= radius,
+        }));
+
+        if (distanceToDriver <= radius) {
+          await calculateRouteDriverToRider(nearByDriver, userPosition);
         }
-      } catch (err) {
-        console.error(err);
       }
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const clearRoute = () => {
+  // function to calculate driver to rider and used as nested function
+  const calculateRouteDriverToRider = async (
+    driverPosition: Coordinates,
+    userPosition: Coordinates,
+  ) => {
+    if (!userPosition || !driverPosition) {
+      console.error("internal error");
+      return;
+    }
+
+    const directionServices: google.maps.DirectionsService =
+      new google.maps.DirectionsService();
+
+    const request: google.maps.DirectionsRequest = {
+      origin: driverPosition,
+      destination: userPosition,
+      travelMode: google.maps.TravelMode.DRIVING,
+    };
+
+    try {
+      const response: google.maps.DirectionsResult = await new Promise(
+        (resolve, reject) => {
+          directionServices.route(request, (result, status) => {
+            if (status === google.maps.DirectionsStatus.OK) {
+              resolve(result as google.maps.DirectionsResult);
+            } else {
+              reject(new Error("Failed to retrieve destination direction"));
+            }
+          });
+        },
+      );
+
+      setDriver((prevState) => ({
+        ...prevState,
+        driverDirection: response as google.maps.DirectionsResult,
+        driverDistance: response?.routes[0].legs[0].distance?.text ?? null,
+        driverDuration: response?.routes[0].legs[0].duration?.text ?? null,
+      }));
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const moveCarAlongRoute = (path) => {
+    let step = 0;
+    const numSteps = 100;
+    const moveRate = path.length / numSteps;
+
+    const interValId = setInterval(() => {
+      step += 1;
+
+      if (step > numSteps) {
+        clearInterval(interValId);
+      } else {
+        const nextPosition = path[Math.floor(step * numSteps)];
+        setDriver({ ...driver, position: nextPosition });
+      }
+    }, 100);
+  };
+
+  // clear rider request
+  const clearRequest = () => {
     if (originRef.current && destinationRef.current) {
       setDirection(null);
       setDistance("");
@@ -187,49 +297,67 @@ export default function MapComponent() {
       {/* input container */}
 
       <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 bg-white bg-opacity-75 w-[30rem] h-[15rem] rounded-lg">
-        {/* input for from */}
-        <Autocomplete>
-          <form className="  flex justify-center items-center mt-10 mx-10 relative">
-            <label htmlFor="origin-form" />
-            <input
-              ref={originRef}
-              name="origin-form"
-              id="origin-form"
-              type="text"
-              placeholder="ride from"
-              className=" w-full  h-10 focus:ring-0 focus:ring-offset-0  focus:outline-none placeholder:capitalize placeholder:text-slate-400  placeholder:px-2  placeholder:text-start text-start text-slate-500 flex justify-start items-center px-2  rounded-lg  border-2 border-slate-200"
-            />
-
-            <div className="h-full w-10 absolute right-0 top-1/2 -translate-y-1/2 bg-indigo-500 rounded-r-lg border-2">
-              <div className="flex h-full justify-center items-center">
-                <button
-                  type="button"
-                  onClick={handleCenterUserPosition}
-                  className=" flex  transition-all duration-200 ease-in-out bg-white h-3 w-3 rounded-full hover:animate-ping hover:scale-110 cursor-pointer"
-                ></button>
+        {direction ? (
+          <div className="border-2 h-full flex flex-col relative">
+            <div>{driver.driverDuration}</div>
+            <div>{driver.driverDistance}</div>
+          </div>
+        ) : (
+          <form
+            onSubmit={calculateAndSetRoute}
+            className="h-full flex flex-col justify-center items-center"
+          >
+            <label htmlFor="origin-form" className="sr-only">
+              Origin
+            </label>
+            {/* from input or ping location */}
+            <div className="w-[90%]  relative">
+              <Autocomplete>
+                <input
+                  ref={originRef}
+                  name="origin-form"
+                  id="origin-form"
+                  type="text"
+                  placeholder="ride from"
+                  className="w-full  h-10 focus:ring-0 focus:ring-offset-0 focus:outline-none placeholder:capitalize placeholder:text-slate-400 placeholder:px-2 placeholder:text-start text-start text-slate-500 flex justify-start items-center px-2 rounded-lg border-2 border-slate-200"
+                />
+              </Autocomplete>
+              <div className="h-full w-10 absolute right-0 top-1/2 -translate-y-1/2 bg-indigo-500 rounded-r-lg border-2">
+                <div className="flex h-full justify-center items-center">
+                  <button
+                    type="button"
+                    onClick={handleCenterUserPosition}
+                    className="flex transition-all duration-200 ease-in-out bg-white h-3 w-3 rounded-full hover:animate-ping hover:scale-110 cursor-pointer"
+                  ></button>
+                </div>
               </div>
             </div>
-          </form>
-        </Autocomplete>
-        <Autocomplete>
-          <form className="  flex flex-col justify-center items-center mt-10 mx-10 relative">
-            <label htmlFor="destination-form" />
-            <input
-              ref={destinationRef}
-              name="destination-form"
-              id="destination-form"
-              type="text"
-              placeholder="ride to"
-              className=" w-full  h-10 focus:ring-0 focus:ring-offset-0  focus:outline-none placeholder:capitalize placeholder:text-slate-400  placeholder:px-2  placeholder:text-start  rounded-lg  border-2 border-slate-200"
-            />
+
+            <label htmlFor="destination-form" className="sr-only">
+              Destination
+            </label>
+            <div className="w-[90%]">
+              <Autocomplete>
+                <input
+                  ref={destinationRef}
+                  name="destination-form"
+                  id="destination-form"
+                  type="text"
+                  placeholder="ride to"
+                  className="mt-4 w-full h-10 focus:ring-0 focus:ring-offset-0 focus:outline-none placeholder:capitalize placeholder:text-slate-400 placeholder:px-2 placeholder:text-start rounded-lg border-2 border-slate-200"
+                />
+              </Autocomplete>
+            </div>
+
             <button
-              // onClick={(e) => calculateRoute(e)}
-              className=" flex justify-center items-center mt-4 h-8 w-20 rounded-lg  text-white text-center bg-indigo-500 capitalize transition-transform duration-200 ease-out hover:scale-105 hover:cursor-pointer"
-              type="submit">
-               request
+              type="submit"
+              className="flex justify-center items-center mt-4 h-8 w-20 rounded-lg text-white text-center bg-indigo-500 capitalize transition-transform duration-200 ease-out hover:scale-105 cursor-pointer"
+            >
+              request
             </button>
           </form>
-        </Autocomplete>
+        )}
+
         <small className="flex  p-2 text-center justify-center items-center  capitalize">
           powered by
           <FontAwesomeIcon
@@ -239,7 +367,6 @@ export default function MapComponent() {
           ></FontAwesomeIcon>
           APIS
         </small>
-
       </div>
 
       <GoogleMap
@@ -265,6 +392,10 @@ export default function MapComponent() {
         )}
         {mapRef.current && direction && (
           <DirectionsRenderer directions={direction} />
+        )}
+
+        {mapRef.current && userPosition && driver.isVisible && (
+          <Marker position={driver.position} />
         )}
       </GoogleMap>
     </div>
