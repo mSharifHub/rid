@@ -2,17 +2,18 @@ import {
   GoogleMap,
   useJsApiLoader,
   Circle,
-  Autocomplete,
   Libraries,
   DirectionsRenderer,
   Marker,
 } from "@react-google-maps/api";
 
 import React, { useEffect, useState, useRef } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { Simulate } from "react-dom/test-utils";
 import error = Simulate.error;
+
+import RequestRideForm from "./RequestRideForm.tsx";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCar } from "@fortawesome/free-solid-svg-icons";
 
 // coordinates types
 type Coordinates = {
@@ -53,6 +54,8 @@ export default function MapComponent() {
   const [distance, setDistance] = useState<string | undefined | null>(null);
 
   const [duration, setDuration] = useState<string | undefined | null>(null);
+
+  const [requestSent, setRequestSent] = useState<boolean>(false);
 
   const [driver, setDriver] = useState<DriverState>({
     position: { lat: 0, lng: 0 },
@@ -111,6 +114,8 @@ export default function MapComponent() {
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
+
+    setRequestSent(true);
 
     if (!originRef.current?.value || !destinationRef.current?.value) {
       return;
@@ -232,6 +237,7 @@ export default function MapComponent() {
   // clear rider request
   const clearRequest = () => {
     if (originRef.current && destinationRef.current) {
+      setRequestSent(false);
       setDirection(null);
       setDistance("");
       setDuration("");
@@ -295,79 +301,37 @@ export default function MapComponent() {
   return (
     <div className="h-screen w-screen relative flex flex-col">
       {/* input container */}
-
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 bg-white bg-opacity-75 w-[30rem] h-[15rem] rounded-lg">
-        {direction ? (
-          <div className="border-2 h-full flex flex-col relative">
-            <div>{driver.driverDuration}</div>
-            <div>{driver.driverDistance}</div>
+      {!requestSent ? (
+        <RequestRideForm
+          calculateAndSetRoute={calculateAndSetRoute}
+          handleCenterUserPosition={handleCenterUserPosition}
+          originRef={originRef}
+          destinationRef={destinationRef}
+        />
+      ) : (
+        <div className="absolute h-40 w-[20rem] top-40 left-1/2 -translate-x-1/2 z-50  rounded-lg bg-slate-50  transition-all duration-500 animate-pulse hover:cursor-pointer border-2">
+          <div className="grid h-full grid-cols-[0.25fr,1fr,0.25fr]">
+            <div className="cols-span-1 col-start-1  h-full flex justify-center items-center text-6xl text-slate-300 px-2">
+              <FontAwesomeIcon icon={faCar} />
+            </div>
+            <div className="cols-span-1 col-start-2 h-full flex flex-col justify-center items-center text-slate-500 font-bold capitalize">
+              <span>{driver.driverDistance}</span>
+              <span className="">{driver.driverDuration}</span>
+            </div>
+            <div className="cols-span-1 col-start-3  h-full flex justify-center items-center">
+              fair
+            </div>
+            <div className="col-span-3 row-start-2 flex justify-center items-center">
+              <button
+                type="button"
+                className=" w-[10rem] h-[3rem]  capitalize border-2 bg-slate-400 rounded-lg  font-bold text-white"
+              >
+                accept
+              </button>
+            </div>
           </div>
-        ) : (
-          <form
-            onSubmit={calculateAndSetRoute}
-            className="h-full flex flex-col justify-center items-center"
-          >
-            <label htmlFor="origin-form" className="sr-only">
-              Origin
-            </label>
-            {/* from input or ping location */}
-            <div className="w-[90%]  relative">
-              <Autocomplete>
-                <input
-                  ref={originRef}
-                  name="origin-form"
-                  id="origin-form"
-                  type="text"
-                  placeholder="ride from"
-                  className="w-full  h-10 focus:ring-0 focus:ring-offset-0 focus:outline-none placeholder:capitalize placeholder:text-slate-400 placeholder:px-2 placeholder:text-start text-start text-slate-500 flex justify-start items-center px-2 rounded-lg border-2 border-slate-200"
-                />
-              </Autocomplete>
-              <div className="h-full w-10 absolute right-0 top-1/2 -translate-y-1/2 bg-indigo-500 rounded-r-lg border-2">
-                <div className="flex h-full justify-center items-center">
-                  <button
-                    type="button"
-                    onClick={handleCenterUserPosition}
-                    className="flex transition-all duration-200 ease-in-out bg-white h-3 w-3 rounded-full hover:animate-ping hover:scale-110 cursor-pointer"
-                  ></button>
-                </div>
-              </div>
-            </div>
-
-            <label htmlFor="destination-form" className="sr-only">
-              Destination
-            </label>
-            <div className="w-[90%]">
-              <Autocomplete>
-                <input
-                  ref={destinationRef}
-                  name="destination-form"
-                  id="destination-form"
-                  type="text"
-                  placeholder="ride to"
-                  className="mt-4 w-full h-10 focus:ring-0 focus:ring-offset-0 focus:outline-none placeholder:capitalize placeholder:text-slate-400 placeholder:px-2 placeholder:text-start rounded-lg border-2 border-slate-200"
-                />
-              </Autocomplete>
-            </div>
-
-            <button
-              type="submit"
-              className="flex justify-center items-center mt-4 h-8 w-20 rounded-lg text-white text-center bg-indigo-500 capitalize transition-transform duration-200 ease-out hover:scale-105 cursor-pointer"
-            >
-              request
-            </button>
-          </form>
-        )}
-
-        <small className="flex  p-2 text-center justify-center items-center  capitalize">
-          powered by
-          <FontAwesomeIcon
-            icon={faGoogle}
-            size="lg"
-            className="text-red-600 mx-2"
-          ></FontAwesomeIcon>
-          APIS
-        </small>
-      </div>
+        </div>
+      )}
 
       <GoogleMap
         onLoad={(map): void => {
