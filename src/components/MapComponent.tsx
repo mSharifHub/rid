@@ -5,6 +5,7 @@ import {
   Libraries,
   DirectionsRenderer,
   Marker,
+  Polyline,
 } from "@react-google-maps/api";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -66,6 +67,9 @@ export default function MapComponent() {
 
   //State to deal control modal to show
   const [accepted, setAccepted] = useState<boolean>(false);
+
+  //State to track path navigated
+  const [navigatePath, setNavigatePath] = useState<google.maps.LatLng[]>([]);
 
   //Driver State
   const [driver, setDriver] = useState<DriverState>({
@@ -331,20 +335,9 @@ export default function MapComponent() {
           driverDistance: `${remainingDistance.toFixed(2)} miles`,
           driverDuration: `${(estimateTime * 60).toFixed(0)} minutes`,
         }));
+        setNavigatePath(path.slice(0, nextPositionIndex + 1));
       }
     }, 200);
-  };
-
-  // clear rider request
-  const clearRequest = () => {
-    if (originRef.current && destinationRef.current) {
-      setRequestSent(false);
-      setDirection(null);
-      setDistance("");
-      setDuration("");
-      originRef.current.value = "";
-      destinationRef.current.value = "";
-    }
   };
 
   useEffect(() => {
@@ -422,7 +415,6 @@ export default function MapComponent() {
           </RideModal>
         )
       )}
-
       {accepted && (
         <div className="absolute h-8 w-[15rem] top-40 left-1/2 -translate-x-1/2 z-50  rounded-lg bg-slate-50 bg-opacity-80  border-2">
           <div className="flex flex-col h-full justify-around items-center font-bold capitalize text-slate-500">
@@ -436,7 +428,8 @@ export default function MapComponent() {
       )}
       <GoogleMap
         onLoad={(map): void => {
-          mapRef.current = map; // Set the map reference
+          mapRef.current = map;
+          // Set the map reference
         }}
         mapContainerStyle={{ width: "100%", height: "100%" }}
         center={userPosition || mapRef.current?.getCenter() || undefined}
@@ -446,9 +439,10 @@ export default function MapComponent() {
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
+          mapId: "main-map",
         }}
       >
-        {userPosition && (
+        {mapRef.current && userPosition && !accepted && (
           <Circle
             center={userPosition}
             radius={radius}
@@ -457,7 +451,7 @@ export default function MapComponent() {
         )}
 
         {/* show user directions trip request */}
-        {mapRef.current && direction && accepted && (
+        {mapRef.current && direction && !accepted && (
           <DirectionsRenderer directions={direction} />
         )}
 
@@ -466,8 +460,25 @@ export default function MapComponent() {
           <DirectionsRenderer directions={driver.driverDirection} />
         )}
 
+        {mapRef.current && accepted && navigatePath.length > 0 && (
+          <Polyline
+            path={navigatePath}
+            options={{
+              strokeColor: "green",
+              strokeOpacity: 1,
+              strokeWeight: 5,
+            }}
+          />
+        )}
+
         {mapRef.current && userPosition && driver.isVisible && (
-          <Marker position={driver.position} />
+          <Marker
+            position={driver.position}
+            icon={{
+              url: "https://img.icons8.com/isometric/100/taxi.png",
+              scaledSize: new google.maps.Size(50, 50),
+            }}
+          />
         )}
       </GoogleMap>
     </div>
