@@ -12,6 +12,6 @@
 # rideshare app under development run locally
 ```
 npm i
-cd scr
+cd src
 npm run dev
 ```
