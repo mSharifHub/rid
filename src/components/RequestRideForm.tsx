@@ -64,7 +64,7 @@ export default function RequestRideForm({
 
         <button
           type="submit"
-          className="flex justify-center items-center mt-4 h-8 w-20 rounded-lg text-white text-center bg-indigo-500 capitalize transition-transform duration-200 ease-out hover:scale-105 cursor-pointer"
+          className="flex justify-center items-center mt-10 h-10 w-40 rounded-lg text-white text-center bg-indigo-500 capitalize transition-transform duration-200 ease-out hover:scale-105 cursor-pointer"
         >
           request
         </button>
